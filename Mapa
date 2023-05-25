@@ -1,0 +1,59 @@
+import folium
+import networkx as nx
+import random
+
+# Coordenadas geográficas de Bogotá
+lat_bogota = 4.6097
+lon_bogota = -74.0817
+
+# Crear un objeto de mapa centrado en Bogotá
+mapa = folium.Map(location=[lat_bogota, lon_bogota], zoom_start=12)
+
+# Número de puntos aleatorios
+num_puntos = 10
+
+# Generar puntos aleatorios en Bogotá
+puntos = [(random.uniform(lat_bogota - 0.05, lat_bogota + 0.05),
+           random.uniform(lon_bogota - 0.05, lon_bogota + 0.05))
+          for _ in range(num_puntos)]
+
+# Agregar marcadores para los puntos en el mapa
+for punto in puntos:
+    folium.Marker(location=punto, icon=folium.Icon(color='green')).add_to(mapa)
+
+# Crear un grafo aleatorio
+grafo = nx.Graph()
+grafo.add_nodes_from(range(num_puntos))
+for i in range(num_puntos):
+    for j in range(i + 1, num_puntos):
+        if random.random() < 0.3:  # Ajustar el umbral para controlar la densidad de conexiones
+            grafo.add_edge(i, j)
+
+# Obtener el camino más corto de un punto A a un punto B
+punto_a = 0
+punto_b = num_puntos - 1
+camino_minimo = nx.shortest_path(grafo, punto_a, punto_b)
+print(camino_minimo)
+
+# Agregar líneas para las conexiones en el camino mínimo (en color rojo)
+for i in range(len(camino_minimo) - 1):
+    punto_1 = puntos[camino_minimo[i]]
+    punto_2 = puntos[camino_minimo[i + 1]]
+    folium.PolyLine([punto_1, punto_2], color='red', weight=3).add_to(mapa)
+
+# Agregar líneas para las conexiones restantes (en color azul)
+for (u, v) in grafo.edges():
+    if u != punto_a or v != punto_b:
+        punto_1 = puntos[u]
+        punto_2 = puntos[v]
+        folium.PolyLine([punto_1, punto_2], color='blue', weight=2, opacity=0.5).add_to(mapa)
+
+# Mostrar el mapa
+mapa
+
+# Guardar el mapa como un archivo HTML
+mapa.save('mapa.html')
+
+# Abrir el archivo HTML en una pestaña del navegador
+import webbrowser
+webbrowser.open('mapa.html')
